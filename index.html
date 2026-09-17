@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Column letter converter</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --sheet-green: #1d6f42;
+  --sheet-green-bright: #21a366;
+  --cell-line: #d6d6d6;
+  --cell-line-dark: #b5b5b5;
+  --ink: #1b1b1b;
+  --ink-soft: #5b5b5b;
+  --paper: #ffffff;
+  --highlight: #e5f3ea;
+  --header-bg: #f3f3f3;
+  --error: #c0392b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  background-image:
+    linear-gradient(var(--cell-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--cell-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.wrap {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+header.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+h1 {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+h1 .num {
+  color: var(--sheet-green);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.tagline {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0 0 40px;
+  max-width: 52ch;
+  line-height: 1.5;
+}
+
+.tagline strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Ruler / hero */
+.ruler-card {
+  background: var(--paper);
+  border: 1px solid var(--cell-line-dark);
+  margin-bottom: 40px;
+}
+
+.formula-bar {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--cell-line-dark);
+  background: var(--header-bg);
+}
+
+.name-box {
+  width: 96px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sheet-green);
+  border-right: 1px solid var(--cell-line-dark);
+  background: var(--paper);
+}
+
+.fx {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 14px;
+  border-right: 1px solid var(--cell-line);
+}
+
+#cell-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 15px;
+  color: var(--ink);
+  outline: none;
+}
+
+#cell-input::placeholder { color: #a8a8a8; }
+
+.ruler-scroll {
+  overflow-x: auto;
+  padding: 20px 0 24px;
+}
+
+.ruler {
+  display: flex;
+  padding: 0 20px;
+  width: max-content;
+}
+
+.ruler-cell {
+  width: 44px;
+  flex-shrink: 0;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding: 8px 0;
+  border-right: 1px solid var(--cell-line);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s ease;
+}
+
+.ruler-cell:hover { background: var(--header-bg); }
+
+.ruler-cell.active {
+  background: var(--sheet-green);
+  color: white;
+  font-weight: 600;
+  border-radius: 2px;
+}
+
+.result-strip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 24px 26px;
+  border-top: 1px solid var(--cell-line);
+}
+
+.result-block { display: flex; flex-direction: column; gap: 2px; }
+
+.result-label {
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.result-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.result-value.accent { color: var(--sheet-green); }
+
+.arrow {
+  color: var(--cell-line-dark);
+  font-size: 20px;
+  align-self: center;
+  margin-top: 14px;
+}
+
+.error-msg {
+  padding: 0 24px 18px;
+  font-size: 13px;
+  color: var(--error);
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 18px;
+}
+
+/* Batch section */
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.section-sub {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.batch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 620px) {
+  .batch-grid { grid-template-columns: 1fr; }
+}
+
+.panel {
+  border: 1px solid var(--cell-line-dark);
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--cell-line);
+  background: var(--header-bg);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+textarea#batch-input {
+  border: none;
+  outline: none;
+  resize: vertical;
+  min-height: 160px;
+  padding: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.output-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13.5px;
+}
+
+.output-scroll { max-height: 220px; overflow-y: auto; }
+
+.output-table th {
+  text-align: left;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--ink-soft);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--cell-line-dark);
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+}
+
+.output-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--cell-line);
+}
+
+.output-table tr:nth-child(even) { background: #fafafa; }
+
+.output-table .num-cell { color: var(--sheet-green); font-weight: 600; }
+
+.empty-state {
+  padding: 30px 14px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
+}
+
+button.copy-btn {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sheet-green);
+  background: transparent;
+  border: 1px solid var(--sheet-green);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+button.copy-btn:hover { background: var(--sheet-green); color: white; }
+button.copy-btn:active { transform: translateY(1px); }
+
+.note {
+  margin-top: 44px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  border-top: 1px solid var(--cell-line);
+  padding-top: 18px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Column letter <span class="num">&harr;</span> number</h1>
+  </header>
+  <p class="tagline">In Excel and Google Sheets, <strong>columns</strong> are labeled with letters (A, B, ... Z, AA, AB...) while <strong>rows</strong> use plain numbers. This tool converts column letters to their position number and back &mdash; handy for formulas like <span style="font-family:'IBM Plex Mono',monospace">INDEX</span>/<span style="font-family:'IBM Plex Mono',monospace">MATCH</span> or scripts that address cells numerically.</p>
+
+  <div class="ruler-card">
+    <div class="formula-bar">
+      <div class="name-box" id="name-box">A</div>
+      <div class="fx">fx</div>
+      <input id="cell-input" type="text" placeholder="Type a column letter (e.g. AC) or a number (e.g. 29)" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="ruler-scroll" id="ruler-scroll">
+      <div class="ruler" id="ruler"></div>
+    </div>
+    <div class="result-strip">
+      <div class="result-block">
+        <span class="result-label">Column letter</span>
+        <span class="result-value accent" id="out-letter">A</span>
+      </div>
+      <div class="arrow">&#8644;</div>
+      <div class="result-block">
+        <span class="result-label">Column number</span>
+        <span class="result-value" id="out-number">1</span>
+      </div>
+    </div>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <p class="note">Excel's grid runs from column A (1) to column XFD (16,384). Values outside that range, or inputs that aren't valid letters/numbers, are flagged as invalid rather than silently guessed at.</p>
+
+</div>
+
+<script>
+const MAX_COL = 16384; // XFD
+
+function letterToNumber(str) {
+  const s = str.toUpperCase();
+  if (!/^[A-Z]+$/.test(s)) return null;
+  let num = 0;
+  for (let i = 0; i < s.length; i++) {
+    num = num * 26 + (s.charCodeAt(i) - 64);
+  }
+  return num;
+}
+
+function numberToLetter(n) {
+  let num = n;
+  let letters = '';
+  while (num > 0) {
+    const rem = (num - 1) % 26;
+    letters = String.fromCharCode(65 + rem) + letters;
+    num = Math.floor((num - 1) / 26);
+  }
+  return letters;
+}
+
+function classify(raw) {
+  const token = raw.trim();
+  if (!token) return null;
+  if (/^\d+$/.test(token)) {
+    const n = parseInt(token, 10);
+    if (n < 1 || n > MAX_COL) return { input: token, valid: false, reason: `out of range (1-${MAX_COL})` };
+    return { input: token, valid: true, letter: numberToLetter(n), number: n };
+  }
+  if (/^[A-Za-z]+$/.test(token)) {
+    const n = letterToNumber(token);
+    if (n === null || n > MAX_COL) return { input: token, valid: false, reason: `out of range (max XFD)` };
+    return { input: token, valid: true, letter: token.toUpperCase(), number: n };
+  }
+  // try to pull a column letter out of a cell ref like A1 or a range A1:D1
+  const cellMatch = token.match(/^([A-Za-z]+)\d*$/);
+  if (cellMatch) {
+    const n = letterToNumber(cellMatch[1]);
+    if (n && n <= MAX_COL) return { input: token, valid: true, letter: cellMatch[1].toUpperCase(), number: n };
+  }
+  return { input: token, valid: false, reason: 'not a valid letter or number' };
+}
+
+// --- Single converter / ruler ---
+const cellInput = document.getElementById('cell-input');
+const nameBox = document.getElementById('name-box');
+const outLetter = document.getElementById('out-letter');
+const outNumber = document.getElementById('out-number');
+const errorMsg = document.getElementById('error-msg');
+const ruler = document.getElementById('ruler');
+const rulerScroll = document.getElementById('ruler-scroll');
+
+let currentNumber = 1;
+
+function buildRuler(centerNum) {
+  ruler.innerHTML = '';
+  const span = 12;
+  const start = Math.max(1, centerNum - span);
+  const end = Math.min(MAX_COL, centerNum + span);
+  for (let n = start; n <= end; n++) {
+    const cell = document.createElement('div');
+    cell.className = 'ruler-cell' + (n === centerNum ? ' active' : '');
+    cell.textContent = numberToLetter(n);
+    cell.dataset.num = n;
+    cell.addEventListener('click', () => {
+      cellInput.value = numberToLetter(n);
+      updateFromInput(numberToLetter(n));
+    });
+    ruler.appendChild(cell);
+  }
+  requestAnimationFrame(() => {
+    const active = ruler.querySelector('.ruler-cell.active');
+    if (active) {
+      const offset = active.offsetLeft - rulerScroll.clientWidth / 2 + active.clientWidth / 2;
+      rulerScroll.scrollLeft = offset;
+    }
+  });
+}
+
+function updateFromInput(rawValue) {
+  const result = classify(rawValue);
+  if (!result) {
+    errorMsg.textContent = '';
+    return;
+  }
+  if (!result.valid) {
+    errorMsg.textContent = `"${result.input}" is ${result.reason}.`;
+    return;
+  }
+  errorMsg.textContent = '';
+  currentNumber = result.number;
+  outLetter.textContent = result.letter;
+  outNumber.textContent = result.number;
+  nameBox.textContent = result.letter;
+  buildRuler(result.number);
+}
+
+cellInput.addEventListener('input', (e) => updateFromInput(e.target.value));
+buildRuler(1);
+</script>
+</body>
+</html>
